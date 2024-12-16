@@ -30,7 +30,9 @@ Clone o repositório
  ```
 
 Configure o Docker
-docker compose up -d
 
+ ```bash
+docker compose up -d
+ ```
 
 
