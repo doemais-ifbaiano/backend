@@ -8,7 +8,7 @@ Backend do aplicativo Doe Mais, responsável por gerenciar o aplicativo que faci
 
 1. Clone o repositório:
 ```bash
- git clone git@github.com:Doe-IFBaiano/backend.git
+ git clone git@github.com:doemais-ifbaiano/backend.git
 ```
  
 2. Copie em um arquivo .env as variáveis necessárias e altere de acordo com o ambiente passado:
