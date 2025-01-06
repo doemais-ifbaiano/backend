@@ -1,62 +1,65 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { db } from "../firebase-admin"; 
+import * as admin from 'firebase-admin';
+import { User } from "../models/User";
+import GiverService from "./giverService";
+import { Giver } from "@/models/Giver";
 
-const prisma = new PrismaClient();
 
 export default class UserService {
+    static async createUser(user: User, giver: Giver, idToken?: string): Promise<string | undefined> {
+        try {
+            let authUser;
 
-    static async save(username : string, password : string, email : string) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        return await prisma.usuarios.create({
-            data: {
-                nome_usuario: username,
-                senha: hashedPassword,
-                email
+            await this.checkIfExists("username", user.username, "O nome de usuário já está em uso");
+            await this.checkIfExists("email", user.email, "O e-mail já está em uso");
+
+            // Se idToken é fornecido estamos criando o usuário com Google
+            if (idToken) {
+
+                // Verificar o idToken do Google mandado pelo frontend
+                const decodedToken = await admin.auth().verifyIdToken(idToken);
+                const uid = decodedToken.uid;
+
+                authUser = await admin.auth().getUser(uid);
+                if (!authUser) {
+                    throw new Error('Usuário não encontrado no Firebase Auth');
+                }
+            } else {
+                authUser = await admin.auth().createUser({
+                    email: user.email,
+                    password: user.password,
+                    displayName: user.username,  
+                });
             }
-        });
-    }
 
-    static async findUserByUsername( username : string) {
-        return await prisma.usuarios.findUnique({
-            where: { nome_usuario: username }
-        });
-    }
-
-    static async findUserByEmail( email : string) {
-        return await prisma.usuarios.findUnique({
-            where: { email }
-        });
-    } 
-
-    static async findUserById(id : any) {
-        return await prisma.usuarios.findUnique({
-            where: { id }
-        });
-    }
-
-    static async generateRandomPassword() {
-        const randomPassword = Math.random().toString(36).slice(-6);
-        
-        const hashedPassword = await bcrypt.hash(randomPassword, 10);
-        return hashedPassword;
-    }
-    
-    static async findOrCreateUser(profile : any) {
-        let user = await prisma.usuarios.findFirst({
-            where: { google_id: profile.id }
-        })
-
-        if (!user) {
-            const password = await this.generateRandomPassword();
-            user = await prisma.usuarios.create({
-                data: {
-                    nome_usuario: profile.displayName,
-                    senha: password,
-                    email: profile.emails[0].value,
-                    google_id: profile.id, 
-                },
+            const userRef = db.collection("users").doc(authUser.uid);
+            await userRef.set({
+                username: user.username,
+                email: user.email,
+                createdAt: new Date(),
             });
+
+            /*Criando Giver associado ao usuário, usei o id, mas pelo firebase ser de documentos, existem 
+            outras possibildiades*/
+            giver.userId = authUser.uid; 
+            const giverId = await GiverService.createGiver(giver);
+
+            if (giverId) {
+                return authUser.uid;
+            } else {
+                console.error("Erro ao criar o Giver.");
+                return undefined;
+            }
+        } catch (error) {
+            console.error("Erro ao criar ou autenticar o usuário:", error);
+            return undefined;
         }
-        return user;
+    }
+
+    private static async checkIfExists(field: string, value: string, errorMessage: string): Promise<void> {
+        const exists = await db.collection("users").where(field, "==", value).get();
+        if (!exists.empty) {
+            throw new Error(errorMessage);
+        }
     }
 }
