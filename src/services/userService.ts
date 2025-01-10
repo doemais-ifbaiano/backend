@@ -27,13 +27,12 @@ export default class UserService {
                 // Salva User no Firestore usando as informações do Google)
                 const userRef = db.collection("users").doc(authUser.uid);
                 await userRef.set({
-                    username: authUser.displayName,
                     email: authUser.email,
                     createdAt: new Date(),
                 });
 
                 const giverData: Giver = {
-                    name: authUser.displayName || "Nome não informado",
+                    name: authUser.displayName || "",
                     cpfCnpj: "",  
                     phoneNumber: "",  
                     birthDate: new Date(0),  
@@ -53,18 +52,15 @@ export default class UserService {
                     throw new Error("Os dados do usuário e do doador são obrigatórios para cadastro manual.");
                 }
 
-                await this.checkIfExists("username", user.username, "O nome de usuário já está em uso");
                 await this.checkIfExists("email", user.email, "O e-mail já está em uso");
 
                 authUser = await admin.auth().createUser({
                     email: user.email,
                     password: user.password,
-                    displayName: user.username,
                 });
 
                 const userRef = db.collection("users").doc(authUser.uid);
                 await userRef.set({
-                    username: user.username,
                     email: user.email,
                     createdAt: new Date(),
                 });

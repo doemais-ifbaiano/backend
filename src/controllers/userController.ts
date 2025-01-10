@@ -7,14 +7,14 @@ export default class UserController {
 
     static async registerUser(req: Request, res: Response): Promise<void> {
         try {
-            const { username, email, password, name, cpfCnpj, phoneNumber, birthDate, idToken } = req.body;
+            const { email, password, name, cpfCnpj, phoneNumber, birthDate, idToken } = req.body;
 
-            if (!username || !email || !password || !name || !cpfCnpj || !phoneNumber || !birthDate) {
+            if ( !email || !password || !name || !cpfCnpj || !phoneNumber || !birthDate) {
                 res.status(400).json({ error: "Todos os campos são obrigatórios" });
                 return;
             }
 
-            const user: User = { username, email, password };
+            const user: User = { email, password };
             const giver: Giver = {
                 name,
                 cpfCnpj,
