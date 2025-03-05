@@ -17,6 +17,7 @@
     "@types/node": "^22.10.2",
     "axios": "^1.7.9",
     "dotenv": "^16.4.7",
+    "expo-web-browser": "^14.0.2",
     "express": "^4.21.2",
     "mercadopago": "^2.3.0",
     "pg": "^8.13.1",
